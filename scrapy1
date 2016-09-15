@@ -1,0 +1,43 @@
+import requests
+from bs4 import BeautifulSoup
+import re
+from datetime import datetime
+from elasticsearch import Elasticsearch
+data = {"id":"","passwd":" "}
+    s = requests.Session()
+    result =s.post("http://m.byr.cn/user/login",data)
+    print(result)
+    def work(p):
+        q=str(p)
+        es = Elasticsearch()
+        url = "http://m.byr.cn/board/Food/1?p="+q #网页地址
+        wp=s.get(url)
+        cont=wp.content.decode("utf-8")
+        print(cont)
+        soup=BeautifulSoup(cont,"lxml")
+        print('\n')
+        url_list = soup.findAll(name='a',href=re.compile('article'))
+        url1=[]
+        i=0
+        list=[]
+        for each_url in url_list:
+            str_url = str(each_url).split('"')
+            list.append(str_url[1])
+            print(str_url[1])
+        list.remove(list[0])
+
+        print(list)
+        st1=''
+        for link in soup.findAll('a'):
+            st2=str(link.string)
+            st1=st1+st2
+        st3='●'
+        st4=st1[st1.find(st3)+1:]
+        st5=re.split('●|Re|├',st4)
+        length=min(len(list),len(st5))
+        print(st5)
+        if length>0:
+            for i in range(0,length):
+                es.index(index="byr", doc_type="info", id=datetime.now(),body={"title":st5[i], "timestamp": datetime.now(),"url":"http://m.byr.cn"+list[i]})
+    for v in range(1,37):
+        work(v)
