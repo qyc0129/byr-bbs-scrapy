@@ -1,0 +1,35 @@
+import requests
+from bs4 import BeautifulSoup
+import re
+from datetime import datetime
+from elasticsearch import Elasticsearch
+data = {"id":"“,"passwd":""}
+s = requests.Session()
+result =s.post("http://m.byr.cn/user/login",data)
+print(result)
+es = Elasticsearch()
+def work(ti,p):
+    q=str(p)
+    id1=ti+q
+    tit="/article/"+ti+"?au="
+    url = "http://m.byr.cn/article/"+ti+"/"+q
+    wp=s.get(url)
+    cont=wp.content.decode("utf-8")
+    print(cont)
+    title=re.search('<li class="f">(.*?)</li>', cont)
+    page=re.search('<div class="sp">(.*?)</div>', cont)
+    if(title is None):
+        return
+    estitle=str(title.group(1))
+    espage=str(page.group(0))
+
+    print(estitle)
+    print(espage)
+    #es.indices.create(index='byrbbs',ignore=400)
+    es.index(index="byrbbs", doc_type="info", id=id1,body={"title":estitle, "timestamp": datetime.now(),"url":url,"page":espage})
+
+    #soup=BeautifulSoup(cont,"lxml")
+    #print('\n')
+    #print(soup.prettify())
+for i in range(18300,19300):
+    work("BBShelp",i)
