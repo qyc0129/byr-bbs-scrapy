@@ -1,0 +1,58 @@
+import requests
+import re
+from elasticsearch import Elasticsearch
+from datetime import datetime
+def searchtitle(t1):
+    txt=t1
+    re1='.*?'	# Non-greedy match on filler
+    re2='".*?"'	# Uninteresting: string
+    re3='.*?'	# Non-greedy match on filler
+    re4='".*?"'	# Uninteresting: string
+    re5='.*?'	# Non-greedy match on filler
+    re6='".*?"'	# Uninteresting: string
+    re7='.*?'	# Non-greedy match on filler
+    re8='".*?"'	# Uninteresting: string
+    re9='.*?'	# Non-greedy match on filler
+    re10='(".*?")'	# Double Quote String 1
+    rg = re.compile(re1+re2+re3+re4+re5+re6+re7+re8+re9+re10,re.IGNORECASE|re.DOTALL)
+    m = rg.search(txt)
+    if m:
+        string1=m.group(1)
+        print ("("+string1+")"+"\n")
+        return ("("+string1+")"+"\n")
+def searchurl(t2):
+    re1='.*?'	# Non-greedy match on filler
+    re2='".*?"'	# Uninteresting: string
+    re3='.*?'	# Non-greedy match on filler
+    re4='".*?"'	# Uninteresting: string
+    re5='.*?'	# Non-greedy match on filler
+    re6='".*?"'	# Uninteresting: string
+    re7='.*?'	# Non-greedy match on filler
+    re8='".*?"'	# Uninteresting: string
+    re9='.*?'	# Non-greedy match on filler
+    re10='".*?"'	# Uninteresting: string
+    re11='.*?'	# Non-greedy match on filler
+    re12='(".*?")'	# Double Quote String 1
+
+    rg = re.compile(re1+re2+re3+re4+re5+re6+re7+re8+re9+re10+re11+re12,re.IGNORECASE|re.DOTALL)
+    m = rg.search(t2)
+    if m:
+        string1=m.group(1)
+        print ("("+string1+")"+"\n")
+        return  "("+string1+")"+"\n"
+def se(p):
+    s=requests.session()
+    q=str(p)
+    url="http://list.iqiyi.com/www/1/1-------------11-"+q+"-1-iqiyi--.html"
+    wp=s.get(url)
+    cont=wp.content.decode("utf-8")
+    print(cont)
+    page=re.findall('<img (.*?)>', cont,re.S)
+    for ii in range(1,len(page)):
+        searchurl(page[ii])
+        searchtitle(page[ii])
+        es.index(index="film", doc_type="info", id=datetime.now(),body={"title":searchtitle(page[ii]), "timestamp": datetime.now(),"url":searchurl(page[ii])})
+es=Elasticsearch()
+es.index(index="film",doc_type="info",body={})
+for i in range(1,30):
+    se(i)
