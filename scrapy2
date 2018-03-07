@@ -3,33 +3,34 @@ from bs4 import BeautifulSoup
 import re
 from datetime import datetime
 from elasticsearch import Elasticsearch
-data = {"id":"“,"passwd":""}
+data = {"id":"“,"passwd":""}//保存论坛账号密码
 s = requests.Session()
-result =s.post("http://m.byr.cn/user/login",data)
-print(result)
-es = Elasticsearch()
-def work(ti,p):
+result =s.post("http://m.byr.cn/user/login",data)//用post登陆论坛的手机版，避开验证码
+print(result)//控制台输出登陆后的页面 查看是否成功
+es = Elasticsearch()//新建es类初始化，使用默认参数
+def work(ti,p)://定义一个函数 ti是论坛版面的名称，p是帖子的id
     q=str(p)
     id1=ti+q
     tit="/article/"+ti+"?au="
-    url = "http://m.byr.cn/article/"+ti+"/"+q
-    wp=s.get(url)
-    cont=wp.content.decode("utf-8")
+    url = "http://m.byr.cn/article/"+ti+"/"+q //就拼成了帖子的完整连接
+    wp=s.get(url)//获得帖子的网页源代码
+    cont=wp.content.decode("utf-8")//设置编码格式，防止中文出现乱码，cont是解码后的网页源代码
     print(cont)
-    title=re.search('<li class="f">(.*?)</li>', cont)
-    page=re.search('<div class="sp">(.*?)</div>', cont)
-    if(title is None):
+    title=re.search('<li class="f">(.*?)</li>', cont)//根据网页源代码编写正则表达式，匹配到该页面的title（因为帖子标题被<li>所包裹）
+    page=re.search('<div class="sp">(.*?)</div>', cont)//根据网页源代码编写正则表达式，匹配到该页面的主帖内容
+    if(title is None)://如果帖子id对应的帖子不存在（可能已被删除）
         return
     estitle=str(title.group(1))
     espage=str(page.group(0))
-
+    //将标题内容都转换成string格式
     print(estitle)
     print(espage)
     #es.indices.create(index='byrbbs',ignore=400)
     es.index(index="byrbbs", doc_type="info", id=id1,body={"title":estitle, "timestamp": datetime.now(),"url":url,"page":espage})
-
+    //把标题，当前时间戳，连接，内容存入es的byrbbs目录中，类型为info
     #soup=BeautifulSoup(cont,"lxml")
     #print('\n')
     #print(soup.prettify())
 for i in range(18300,19300):
     work("BBShelp",i)
+    //work函数就是将论坛的ti版面的第p个帖子的内容存入elasticsearch中
